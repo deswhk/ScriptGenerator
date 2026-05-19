@@ -26,15 +26,15 @@ tables:
         nullable: true
  
     joins:
-      - column: PartyTypeId
+      - column: FeeTypeId
         ref_schema: MasterData
         ref_table: CodeTable
         ref_column: Id
         select:
           - column: Code
-            alias: PartyTypeCode
+            alias: FeeTypeCode
           - column: Description
-            alias: PartyTypeDescription
+            alias: FeeTypeDescription
  
     audit:
       enable_table: true
@@ -45,7 +45,7 @@ tables:
       soft_delete: true
  
     indexes:
-      - column: PartyTypeId # index name is auto-generated as IDX_Fee_PartyTypeId
+      - column: FeeTypeId # index name is auto-generated as IDX_Fee_FeeTypeId
  
       - column: CertificateNumber
         name: IDX_Fee_CertificateNumber
