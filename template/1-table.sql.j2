@@ -1,0 +1,64 @@
+
+
+/*----------      NEW TABLE: {{ table }}      ----------*/
+
+/*----------      CREATE BASE TABLE      ----------*/
+CREATE TABLE IF NOT EXISTS "{{ schema }}"."{{ table }}"
+(
+    "{{ id.name }}" {{ id.type }} NOT NULL DEFAULT {{ id.default }},
+{% for col in columns %}
+    "{{ col.name }}" {{ col.type }}{% if col.nullable is false %} NOT NULL{% endif %}{% if col.default %} DEFAULT {{ col.default }}{% endif %},
+{% endfor %}
+{% if audit.created_by %}
+    "CreatedBy" uuid NOT NULL,
+{% endif %}
+{% if audit.updated_by %}
+    "UpdatedBy" uuid NOT NULL,
+{% endif %}
+{% if audit.created_date %}
+    "CreatedDate" timestamp(6) without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+{% endif %}
+{% if audit.updated_date %}
+    "UpdatedDate" timestamp(6) without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+{% endif %}
+{% if audit.soft_delete %}
+    "IsDeleted" boolean NOT NULL DEFAULT false,
+{% endif %}
+    CONSTRAINT "PK_{{ table }}" PRIMARY KEY ("{{ id.name }}")
+);
+
+
+{% if audit.enable_table %}
+/*----------      CREATE AUDIT TABLE      ----------*/
+CREATE TABLE IF NOT EXISTS "{{ schema }}"."{{ table }}_Audit"
+(
+    "AuditId" uuid,
+    "AuditAction" character varying(10),
+    "AuditEffectiveStart" timestamp without time zone,
+    "AuditEffectiveEnd" timestamp without time zone,
+    "{{ id.name }}" {{ id.type }},
+{% for col in columns %}
+    "{{ col.name }}" {{ col.type }},
+{% endfor %}
+{% if audit.created_by %}
+    "CreatedBy" uuid,
+{% endif %}
+{% if audit.updated_by %}
+    "UpdatedBy" uuid,
+{% endif %}
+{% if audit.created_date %}
+    "CreatedDate" timestamp(6) without time zone,
+{% endif %}
+{% if audit.updated_date %}
+    "UpdatedDate" timestamp(6) without time zone,
+{% endif %}
+{% if audit.soft_delete %}
+    "IsDeleted" boolean,
+{% endif %}
+);
+{% else %}
+-- Audit table creation skipped
+{% endif %}
+
+
+64

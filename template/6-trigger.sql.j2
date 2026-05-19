@@ -1,0 +1,20 @@
+/*----------      CREATE VIEW TRIGGER      ----------*/
+CREATE OR REPLACE TRIGGER "tr_instead_V_{{ table }}"
+    INSTEAD OF INSERT OR DELETE OR UPDATE
+    ON "{{ schema }}"."V_{{ table }}"
+    FOR EACH ROW
+    EXECUTE FUNCTION "{{ schema }}"."fn_instead_V_{{ table }}"();
+
+
+{% if audit.enable_table %}
+/*----------      CREATE AUDIT TRIGGER      ----------*/
+CREATE OR REPLACE TRIGGER "tr_{{ table }}_Audit"
+    AFTER INSERT OR DELETE OR UPDATE
+    ON "{{ schema }}"."{{ table }}"
+    FOR EACH ROW
+    EXECUTE FUNCTION "{{ schema }}"."fn_{{ table }}_Audit"();
+{% else %}
+-- Audit trigger creation skipped
+{% endif %}
+
+

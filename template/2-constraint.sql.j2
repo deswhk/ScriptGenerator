@@ -1,0 +1,41 @@
+/*----------      CREATE CONSTRAINT      ----------*/
+{% if audit.created_by %}
+ALTER TABLE IF EXISTS "{{ schema }}"."{{ table }}"
+    ADD CONSTRAINT "FK_{{ table }}_User_CreatedBy" FOREIGN KEY ("CreatedBy")
+    REFERENCES "Entity"."User" ("UserId") MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+{% endif -%}
+
+{% if audit.updated_by %}
+ALTER TABLE IF EXISTS "{{ schema }}"."{{ table }}"
+    ADD CONSTRAINT "FK_{{ table }}_User_UpdatedBy" FOREIGN KEY ("UpdatedBy")
+    REFERENCES "Entity"."User" ("UserId") MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+{% endif -%}
+
+{% for col in columns %}
+{%- if col.unique %}
+ALTER TABLE IF EXISTS "{{ schema }}"."{{ table }}"
+    ADD CONSTRAINT "UK_{{ table }}_{{ col.name }}" UNIQUE ("{{ col.name }}");
+
+{% endif -%}
+
+{% if col.fk %}
+ALTER TABLE IF EXISTS "{{ schema }}"."{{ table }}"
+    ADD CONSTRAINT "FK_{{ table }}_{{ col.fk.table }}_{{ col.name }}" FOREIGN KEY ("{{ col.name }}")
+    REFERENCES "{{ col.fk.schema }}"."{{ col.fk.table }}" ("{{ col.fk.column }}") MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+{% endif -%}
+
+{% if col.check %}
+ALTER TABLE IF EXISTS "{{ schema }}"."{{ table }}"
+    ADD CONSTRAINT "CHK_{{ col.name }}_{{ col.check.name }}" CHECK (({{ col.check.expression }}));
+
+{% endif -%}
+{% endfor -%}

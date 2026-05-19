@@ -1,0 +1,35 @@
+/*----------      GRANT      ----------*/
+-- Base table grant
+GRANT SELECT ON TABLE "{{ schema }}"."{{ table }}" TO pg_read_all_data;
+GRANT ALL ON TABLE "{{ schema }}"."{{ table }}" TO {{ ownership.owner }};
+GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE "{{ schema }}"."{{ table }}" TO svcrole{{ schema | lower }};
+
+-- View grant
+GRANT SELECT ON TABLE "{{ schema }}"."V_{{ table }}" TO pg_read_all_data;
+GRANT ALL ON TABLE "{{ schema }}"."V_{{ table }}" TO {{ ownership.owner }};
+GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE "{{ schema }}"."V_{{ table }}" TO svcrole{{ schema | lower }};
+
+{% if audit.enable_table %}
+-- Audit table grant
+GRANT SELECT ON TABLE "{{ schema }}"."{{ table }}_Audit" TO pg_read_all_data;
+GRANT ALL ON TABLE "{{ schema }}"."{{ table }}_Audit" TO {{ ownership.owner }};
+GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE "{{ schema }}"."{{ table }}_Audit" TO svcrole{{ schema | lower }};
+{% else %}
+-- Audit table grant skipped
+{% endif %}
+
+-- View function grant
+GRANT EXECUTE ON FUNCTION "{{ schema }}"."fn_instead_V_{{ table }}"() TO {{ ownership.owner }};
+GRANT EXECUTE ON FUNCTION "{{ schema }}"."fn_instead_V_{{ table }}"() TO pg_read_all_data;
+GRANT EXECUTE ON FUNCTION "{{ schema }}"."fn_instead_V_{{ table }}"() TO pg_write_all_data;
+GRANT EXECUTE ON FUNCTION "{{ schema }}"."fn_instead_V_{{ table }}"() TO svcrole{{ schema | lower }};
+
+{% if audit.enable_table %}
+-- Audit function grant
+GRANT EXECUTE ON FUNCTION "{{ schema }}"."fn_{{ table }}_Audit"() TO {{ ownership.owner }};
+GRANT EXECUTE ON FUNCTION "{{ schema }}"."fn_{{ table }}_Audit"() TO pg_read_all_data;
+GRANT EXECUTE ON FUNCTION "{{ schema }}"."fn_{{ table }}_Audit"() TO pg_write_all_data;
+GRANT EXECUTE ON FUNCTION "{{ schema }}"."fn_{{ table }}_Audit"() TO svcrole{{ schema | lower }};
+{% else %}
+-- Audit function grant skipped
+{% endif %}

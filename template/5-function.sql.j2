@@ -1,0 +1,127 @@
+/*----------      CREATE VIEW FUNCTION      ----------*/
+{# ============================================================
+   Build INSERT column & value lists
+   ============================================================ #}
+{% set insert_cols = [] -%}
+{% set insert_vals = [] -%}
+
+{% set _ = insert_cols.append('"' ~ id.name ~ '"') %}
+{% set _ = insert_vals.append('NEW."' ~ id.name ~ '"') -%}
+
+{% for col in columns %}
+{% set _ = insert_cols.append('"' ~ col.name ~ '"') %}
+{% set _ = insert_vals.append('NEW."' ~ col.name ~ '"') %}
+{% endfor -%}
+
+{% if audit.created_by %}
+{% set _ = insert_cols.append('"CreatedBy"') %}
+{% set _ = insert_vals.append("current_setting('app.userid'::text)::uuid") %}
+{% endif -%}
+
+{% if audit.updated_by %}
+{% set _ = insert_cols.append('"UpdatedBy"') %}
+{% set _ = insert_vals.append("current_setting('app.userid'::text)::uuid") %}
+{% endif -%}
+
+{# ============================================================
+   Build UPDATE SET list
+   ============================================================ #}
+{% set update_sets = [] -%}
+
+{% for col in columns %}
+{% set _ = update_sets.append('"' ~ col.name ~ '" = NEW."' ~ col.name ~ '"') %}
+{% endfor -%}
+
+{% if audit.updated_by %}
+{% set _ = update_sets.append('"UpdatedBy" = current_setting(\'app.userid\'::text)::uuid') %}
+{% endif -%}
+
+{% if audit.updated_date %}
+{% set _ = update_sets.append('"UpdatedDate" = CURRENT_TIMESTAMP') %}
+{% endif -%}
+
+{# ============================================================
+   Build DELETE SET list (soft delete aware)
+   ============================================================ #}
+{% set delete_sets = [] -%}
+
+{% if audit.soft_delete %}
+{% set _ = delete_sets.append('"IsDeleted" = true') %}
+{% endif -%}
+
+{% if audit.updated_date %}
+{% set _ = delete_sets.append('"UpdatedDate" = CURRENT_TIMESTAMP') %}
+{% endif -%}
+
+{# ============================================================
+   Create trigger function
+   ============================================================ #}
+CREATE OR REPLACE FUNCTION "{{ schema }}"."fn_instead_V_{{ table }}"()
+    RETURNS trigger
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE NOT LEAKPROOF
+AS $BODY$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO "{{ schema }}"."{{ table }}" (
+            {{ insert_cols | join(', ') }}
+        )
+        VALUES (
+            {{ insert_vals | join(', ') }}
+        );
+        RETURN NEW;
+    ELSIF TG_OP = 'UPDATE' THEN
+        UPDATE "{{ schema }}"."{{ table }}"
+        SET
+            {{ update_sets | join(',\n            ') }}
+        WHERE "{{ id.name }}" = NEW."{{ id.name }}";
+        RETURN NEW;
+    ELSIF TG_OP = 'DELETE' THEN
+        UPDATE "{{ schema }}"."{{ table }}"
+        SET
+            {{ delete_sets | join(', ') }}
+        WHERE "{{ id.name }}" = OLD."{{ id.name }}";
+        RETURN NULL;
+    END IF;
+END;
+$BODY$;
+
+
+{% if audit.enable_table -%}
+/*----------      CREATE AUDIT FUNCTION      ----------*/
+CREATE OR REPLACE FUNCTION "{{ schema }}"."fn_{{ table }}_Audit"()
+    RETURNS trigger
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE NOT LEAKPROOF
+AS $BODY$
+BEGIN
+    IF (TG_OP = 'UPDATE' OR TG_OP = 'DELETE') THEN
+        UPDATE "{{ schema }}"."{{ table }}_Audit"
+        SET "AuditEffectiveEnd" = CURRENT_TIMESTAMP, "UpdatedBy" = current_setting('app.userid'::text)::uuid
+        WHERE "{{ id.name }}" = OLD."{{ id.name }}"
+        AND "AuditEffectiveEnd" = TIMESTAMP '9999-12-31 23:59:59';
+    END IF;
+
+    IF (TG_OP = 'DELETE') THEN
+        INSERT INTO "{{ schema }}"."{{ table }}_Audit"
+        VALUES (gen_random_uuid(), 'DELETE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, OLD.*);
+        RETURN OLD;
+    ELSIF (TG_OP = 'INSERT') THEN
+        INSERT INTO "{{ schema }}"."{{ table }}_Audit"
+        VALUES (gen_random_uuid(), 'INSERT', CURRENT_TIMESTAMP, '9999-12-31 23:59:59', NEW.*);
+        RETURN NEW;
+    ELSIF (TG_OP = 'UPDATE') THEN
+        INSERT INTO "{{ schema }}"."{{ table }}_Audit"
+        VALUES (gen_random_uuid(), 'UPDATE', CURRENT_TIMESTAMP, '9999-12-31 23:59:59', NEW.*);
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$BODY$;
+{% else %}
+-- Audit trigger creation skipped
+{% endif %}
+
+

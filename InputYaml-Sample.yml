@@ -1,0 +1,54 @@
+# This is a yaml sample with all the possible parameters
+tables:
+  - table: Fee
+    schema: Payment
+    id:
+      name: FeeId
+      type: <character varying(n)|text|integer|bigint|numeric(p,s)|timestamp(6) without time zone|boolean|json|uuid>
+      default: gen_random_uuid()
+
+    columns:
+      - name: TransactionId
+        type: <character varying(n)|text|integer|bigint|numeric(p,s)|timestamp(6) without time zone|boolean|json|uuid>
+        unique: false
+        nullable: false
+        fk:
+          schema: Transaction
+          table: Transaction
+          column: TransactionId
+        check:
+          name: ValidStatus
+          expression: "'Status' IN ('a',2,3)"
+ 
+      - name: CertificateNumber
+        type: character varying(24)
+        unique: false
+        nullable: true
+ 
+    joins:
+      - column: PartyTypeId
+        ref_schema: MasterData
+        ref_table: CodeTable
+        ref_column: Id
+        select:
+          - column: Code
+            alias: PartyTypeCode
+          - column: Description
+            alias: PartyTypeDescription
+ 
+    audit:
+      enable_table: true
+      created_by: true
+      updated_by: true
+      created_date: true
+      updated_date: true
+      soft_delete: true
+ 
+    indexes:
+      - column: PartyTypeId # index name is auto-generated as IDX_Fee_PartyTypeId
+ 
+      - column: CertificateNumber
+        name: IDX_Fee_CertificateNumber
+ 
+    ownership:
+      owner: svcroleadmin

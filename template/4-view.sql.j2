@@ -1,0 +1,41 @@
+/*----------      CREATE VIEW      ----------*/
+{% set letters = "abcdefghijklmnopqrstuvwxyz" -%}
+
+{# --- Base select columns --- #}
+{% set select_cols = [] %}
+{% set _ = select_cols.append('a."' ~ id.name ~ '"') -%}
+
+{% for col in columns %}
+{% set _ = select_cols.append('a."' ~ col.name ~ '"') %}
+{% endfor -%}
+
+{# --- Audit columns --- #}
+{% if audit.created_by %}{% set _ = select_cols.append('a."CreatedBy"') %}{% endif -%}
+{% if audit.updated_by %}{% set _ = select_cols.append('a."UpdatedBy"') %}{% endif -%}
+{% if audit.created_date %}{% set _ = select_cols.append('a."CreatedDate"') %}{% endif -%}
+{% if audit.updated_date %}{% set _ = select_cols.append('a."UpdatedDate"') %}{% endif -%}
+{% if audit.soft_delete %}{% set _ = select_cols.append('a."IsDeleted"') %}{% endif -%}
+
+{# --- Join-derived columns --- #}
+{% if joins %}
+{% for join in joins %}
+{% set alias = letters[loop.index0 + 1] %}
+{% for sel in join.select %}
+{% set _ = select_cols.append(alias ~ '."' ~ sel.column ~ '" AS "' ~ sel.alias ~ '"') %}
+{% endfor %}
+{% endfor %}
+{% endif -%}
+
+CREATE OR REPLACE VIEW "{{ schema }}"."V_{{ table }}" AS
+SELECT
+    {{ select_cols | join(',\n    ') }}
+FROM "{{ schema }}"."{{ table }}" a
+{% if joins %}
+{% for join in joins %}
+LEFT JOIN "{{ join.ref_schema }}"."{{ join.ref_table }}" {{ letters[loop.index0 + 1] }}
+    ON a."{{ join.column }}" = {{ letters[loop.index0 + 1] }}."{{ join.ref_column }}"
+{% endfor %}
+{% endif %}
+WHERE a."IsDeleted" = false;
+
+

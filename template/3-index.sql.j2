@@ -1,0 +1,25 @@
+/*----------      CREATE INDEX      ----------*/
+{% if audit.created_by %}
+CREATE INDEX IF NOT EXISTS "IDX_{{ table }}_CreatedBy" ON "{{ schema }}"."{{ table }}"
+    USING btree ("CreatedBy" ASC NULLS LAST)
+    WITH (deduplicate_items=True);
+
+{% endif -%}
+
+{% if audit.updated_by %}
+CREATE INDEX IF NOT EXISTS "IDX_{{ table }}_UpdatedBy" ON "{{ schema }}"."{{ table }}"
+    USING btree ("UpdatedBy" ASC NULLS LAST)
+    WITH (deduplicate_items=True);
+
+{% endif -%}
+
+{% if indexes is iterable %}
+{% for idx in indexes %}
+{% if idx.column is defined and idx.column %}
+CREATE INDEX IF NOT EXISTS "{{ idx.name | default('IDX_' ~ table ~ '_' ~ idx.column) }}" ON "{{ schema }}"."{{ table }}"
+    USING btree ("{{ idx.column }}" ASC NULLS LAST)
+    WITH (deduplicate_items=True);
+
+{% endif -%}
+{% endfor -%}
+{% endif -%}

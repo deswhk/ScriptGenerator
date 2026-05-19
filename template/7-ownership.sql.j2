@@ -1,0 +1,16 @@
+/*----------      CREATE OWNERSHIP      ----------*/
+ALTER TABLE IF EXISTS "{{ schema }}"."{{ table }}" OWNER TO {{ ownership.owner }};
+ALTER TABLE IF EXISTS "{{ schema }}"."V_{{ table }}" OWNER TO {{ ownership.owner }};
+{% if audit.enable_table %}
+ALTER TABLE IF EXISTS "{{ schema }}"."{{ table }}_Audit" OWNER TO {{ ownership.owner }};
+{% else %}
+-- Audit table ownership skipped
+{% endif %}
+ALTER FUNCTION "{{ schema }}"."fn_instead_V_{{ table }}"() OWNER TO {{ ownership.owner }};
+{% if audit.enable_table %}
+ALTER FUNCTION "{{ schema }}"."fn_{{ table }}_Audit"() OWNER TO {{ ownership.owner }};
+{% else %}
+-- Audit function ownership skipped
+{% endif %}
+
+

@@ -1,0 +1,40 @@
+# Python bytecode caches
+__pycache__/
+*.pyc
+*.pyo
+
+# Test framework caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type-checker caches
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE / editor settings
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+*~
+
+# OS detritus
+.DS_Store
+Thumbs.db
+
+# Build artifacts (created by pip install, pip wheel, python -m build)
+*.egg-info/
+build/
+dist/
+*.whl
+*.tar.gz
+
+# ddlgen runtime artifacts (generated on each run, not source)
+OutputSql-*
