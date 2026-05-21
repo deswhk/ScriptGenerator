@@ -27,3 +27,6 @@ python genDDL.py --n InputYaml-Sample.yml
 - Writes output to `OutputSql-Sample.sql`.
 - Replace `Sample` with any meaningful name (typically a business object).
 
+## License
+
+MIT — see [LICENSE](LICENSE) for details.
