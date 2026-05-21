@@ -1,8 +1,29 @@
-This tool automates the creation of PostgreSQL database objects based on a YAML configuration. 
-It uses Python and Jinja2 to generate standard table definitions and its related objects.
-​How to Run
-​To generate a SQL script, run the following command from your PowerShell terminal:
-python genDDL.py --n Sample
-• ​This will look for InputYaml-Sample.yml in the same directory.
-• ​The generated SQL will be saved as OutputSql-Sample.sql.
-• ​Replace 'Sample' with a meaningful business object name.
+# ScriptGenerator
+
+A Python tool that generates PostgreSQL DDL scripts from a single YAML schema definition.
+
+## Why I built this
+
+Writing DDL by hand is repetitive and error-prone. ScriptGenerator solves that: define a schema once in YAML, get correct DDL out the other end — no copy-pasting from old scripts, no typos in column types.
+
+This is the first iteration and is intentionally minimal: it generates `CREATE TABLE` statements only, with no diff/`ALTER` support yet. The next iteration will add schema-change detection so the tool can produce migration scripts when the YAML evolves. Watch this space.
+
+## Tech used
+
+- **Python 3.10+**
+- **YAML** — for schema definition
+- **Jinja2** — for templating the SQL output
+- **Git + GitHub** — version control
+
+## How to run
+
+From a terminal, in the project folder:
+
+​```
+python genDDL.py --n InputYaml-Sample.yml
+​```
+
+- Looks for `InputYaml-Sample.yml` in the same directory.
+- Writes output to `OutputSql-Sample.sql`.
+- Replace `Sample` with any meaningful name (typically a business object).
+
